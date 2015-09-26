@@ -103,10 +103,15 @@ impl Iterator for ChatClient {
                                     decodedpacket.nick,
                                     decodedpacket.text,
                                     decodedpacket.trip.unwrap_or("".to_string())
-                                    ));
+                            ));
                         }else {
                             continue;
                         }
+                    }else if cmd == "info" {
+                        let decodedpacket: InfoWarnPacket = json::decode(&data).unwrap();
+                        return Some(ChatEvent::Info (
+                            decodedpacket.text
+                        ));
                     }else if cmd == "onlineAdd" {
                         let decodedpacket: OnlineChangePacket = json::decode(&data).unwrap();
                         return Some(ChatEvent::JoinRoom (
@@ -136,7 +141,8 @@ impl Iterator for ChatClient {
 pub enum ChatEvent {
     Message (String, String, String),
     JoinRoom (String),
-    LeaveRoom (String)
+    LeaveRoom (String),
+    Info (String)
 }
 
 #[derive(RustcEncodable, RustcDecodable)]
@@ -154,6 +160,11 @@ struct ChatPacket {
 #[derive(RustcDecodable)]
 struct OnlineChangePacket {
     nick: String
+}
+
+#[derive(RustcDecodable)]
+struct InfoWarnPacket {
+    text: String
 }
 
 #[derive(RustcEncodable)]

@@ -66,6 +66,14 @@ impl ChatClient {
         self.sender.lock().unwrap().send_message(message).unwrap();
     }
 
+    pub fn send_stats_request(&mut self) {
+        let stats_packet = json::encode(&GenericPacket {
+            cmd: "stats".to_string()
+        }).unwrap();
+        let message = Message::Text(stats_packet);
+        self.sender.lock().unwrap().send_message(message).unwrap();
+    }
+
     pub fn start_ping_thread(&mut self) {
         let mut chat_clone = self.clone();
         thread::spawn(move|| {

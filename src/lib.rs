@@ -16,7 +16,7 @@ use websocket::ws::receiver::Receiver as ReceiverTrait;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-#[derive(Clone)]
+#[derive(Clone, Sync)]
 pub struct ChatClient {
     nick: String,
     channel: String,

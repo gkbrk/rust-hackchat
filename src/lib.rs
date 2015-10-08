@@ -70,6 +70,12 @@ impl ChatClient {
         };
     }
 
+    /// Sends a message to the current channel.
+    ///
+    /// ```
+    /// let mut chat = ChatClient::new("TestBot", "botDev");
+    /// chat.send_message("Hello there people".to_string());
+    /// ```
     pub fn send_message(&mut self, message: String) {
         let chat_packet = json::encode(&ChatPacketSend {
             cmd: "chat".to_string(),
@@ -79,7 +85,7 @@ impl ChatClient {
         self.sender.lock().unwrap().send_message(message).unwrap();
     }
 
-    pub fn send_ping(&mut self) {
+    fn send_ping(&mut self) {
         let ping_packet = json::encode(&GenericPacket {
             cmd: "ping".to_string()
         }).unwrap();
@@ -95,6 +101,7 @@ impl ChatClient {
         self.sender.lock().unwrap().send_message(message).unwrap();
     }
 
+    /// Starts the ping thread, whichs sends regular pings to keep the connection open.
     pub fn start_ping_thread(&mut self) {
         let mut chat_clone = self.clone();
         thread::spawn(move|| {
@@ -105,6 +112,7 @@ impl ChatClient {
         });
     }
 
+    /// Returns an iterator of hack.chat events such as messages.
     pub fn iter(&mut self) -> ChatClient {
         return self.clone();
     }
@@ -167,9 +175,16 @@ impl Iterator for ChatClient {
     }
 }
 
+/// Various Hack.chat events
 pub enum ChatEvent {
+    /// Raised when there is a new message from the channel
+    /// The format is ChatEvent::Message(nick, text, trip_code)
     Message (String, String, String),
+    /// Rasied when someone joins the channel
+    /// The format is ChatEvent::JoinRoom(nick)
     JoinRoom (String),
+    /// Raised when someone leaves the channel
+    /// The format is ChatEvent::LeaveRoom(nick)
     LeaveRoom (String),
     Info (String)
 }

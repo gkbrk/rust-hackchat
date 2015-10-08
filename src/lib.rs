@@ -1,22 +1,3 @@
-extern crate websocket;
-extern crate rustc_serialize;
-
-use std::thread;
-
-use rustc_serialize::json;
-
-use websocket::{Client, Message, WebSocketStream};
-use websocket::client::request::Url;
-use websocket::client::sender::Sender;
-use websocket::client::receiver::Receiver;
-
-use websocket::ws::sender::Sender as SenderTrait;
-use websocket::ws::receiver::Receiver as ReceiverTrait;
-
-use std::sync::Arc;
-use std::sync::Mutex;
-
-
 //! #rust-hackchat
 //! A client library for Hack.chat.
 //!
@@ -42,6 +23,24 @@ use std::sync::Mutex;
 //!     }
 //! }
 //! ```
+
+extern crate websocket;
+extern crate rustc_serialize;
+
+use std::thread;
+
+use rustc_serialize::json;
+
+use websocket::{Client, Message, WebSocketStream};
+use websocket::client::request::Url;
+use websocket::client::sender::Sender;
+use websocket::client::receiver::Receiver;
+
+use websocket::ws::sender::Sender as SenderTrait;
+use websocket::ws::receiver::Receiver as ReceiverTrait;
+
+use std::sync::Arc;
+use std::sync::Mutex;
 
 #[derive(Clone)]
 pub struct ChatClient {

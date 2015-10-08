@@ -25,6 +25,27 @@ pub struct ChatClient {
 }
 
 impl ChatClient {
+    /// Creates a new connection to hack.chat.
+    ///
+    /// #Example
+    ///
+    /// ```
+    /// extern crate hackchat;
+    /// use hackchat::{ChatClient, ChatEvent};
+    ///
+    /// fn main() {
+    ///     let mut conn = ChatClient::new("TestBot", "botDev"); //Connects to the ?botDev channel
+    ///     conn.start_ping_thread(); //Sends ping packets regularly
+    ///
+    ///     for event in conn.iter() {
+    ///         match event {
+    ///             ChatEvent::Message(nick, message, trip_code) => {
+    ///                 println!("<{}> {}", nick, message);
+    ///             }
+    ///         }
+    ///     }
+    /// }
+    /// ```
     pub fn new(nick: &str, channel: &str) -> ChatClient {
         let url = Url::parse("wss://hack.chat/chat-ws").unwrap();
         let request = Client::connect(url).unwrap();

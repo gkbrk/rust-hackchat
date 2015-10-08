@@ -16,6 +16,33 @@ use websocket::ws::receiver::Receiver as ReceiverTrait;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+
+//! #rust-hackchat
+//! A client library for Hack.chat.
+//!
+//! This library allows you to make custom clients and bots for Hack.chat using Rust.
+//!
+//! #Examples
+//!
+//! ```
+//! extern crate hackchat;
+//! use hackchat::{ChatClient, ChatEvent};
+//!
+//! fn main() {
+//!     let mut conn = ChatClient::new("TestBot", "botDev"); //Connects to the ?botDev channel
+//!     conn.start_ping_thread(); //Sends ping packets regularly
+//!
+//!     for event in conn.iter() {
+//!         match event {
+//!             ChatEvent::Message(nick, message, trip_code) => {
+//!                 println!("<{}> {}", nick, message);
+//!             },
+//!             _ => {}
+//!         }
+//!     }
+//! }
+//! ```
+
 #[derive(Clone)]
 pub struct ChatClient {
     nick: String,
@@ -26,26 +53,6 @@ pub struct ChatClient {
 
 impl ChatClient {
     /// Creates a new connection to hack.chat.
-    ///
-    /// #Example
-    ///
-    /// ```
-    /// extern crate hackchat;
-    /// use hackchat::{ChatClient, ChatEvent};
-    ///
-    /// fn main() {
-    ///     let mut conn = ChatClient::new("TestBot", "botDev"); //Connects to the ?botDev channel
-    ///     conn.start_ping_thread(); //Sends ping packets regularly
-    ///
-    ///     for event in conn.iter() {
-    ///         match event {
-    ///             ChatEvent::Message(nick, message, trip_code) => {
-    ///                 println!("<{}> {}", nick, message);
-    ///             }
-    ///         }
-    ///     }
-    /// }
-    /// ```
     pub fn new(nick: &str, channel: &str) -> ChatClient {
         let url = Url::parse("wss://hack.chat/chat-ws").unwrap();
         let request = Client::connect(url).unwrap();
@@ -177,15 +184,20 @@ impl Iterator for ChatClient {
 
 /// Various Hack.chat events
 pub enum ChatEvent {
-    /// Raised when there is a new message from the channel
+    /// Raised when there is a new message from the channel  
     /// The format is ChatEvent::Message(nick, text, trip_code)
     Message (String, String, String),
-    /// Rasied when someone joins the channel
+    /// Rasied when someone joins the channel  
     /// The format is ChatEvent::JoinRoom(nick)
     JoinRoom (String),
-    /// Raised when someone leaves the channel
+    /// Raised when someone leaves the channel  
     /// The format is ChatEvent::LeaveRoom(nick)
     LeaveRoom (String),
+    /// Raised when there is an event from the channel itself.  
+    /// Some examples include:
+    ///
+    /// * The result of the stats requests
+    /// * A user being banned.
     Info (String)
 }
 

@@ -2,6 +2,12 @@
 name = "hackchat"
 version = "0.1.1"
 authors = ["Gökberk Yaltıraklı <webdosusb@gmail.com>"]
+description = "Hack.chat client library in Rust."
+license = "MIT"
+keywords = ["hack", "chat", "hackchat", "api", "bot", "client"]
+repository = "https://github.com/gkbrk/rust-hackchat"
+documentation = "https://gkbrk.github.io/rust-hackchat/hackchat/index.html"
+
 
 [dependencies]
 websocket = "~0.12.2"

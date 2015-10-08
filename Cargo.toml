@@ -4,7 +4,7 @@ version = "0.1.1"
 authors = ["Gökberk Yaltıraklı <webdosusb@gmail.com>"]
 description = "Hack.chat client library in Rust."
 license = "MIT"
-keywords = ["hack", "chat", "hackchat", "api", "bot", "client"]
+keywords = ["hack", "chat", "hackchat", "api", "bot"]
 repository = "https://github.com/gkbrk/rust-hackchat"
 documentation = "https://gkbrk.github.io/rust-hackchat/hackchat/index.html"
 

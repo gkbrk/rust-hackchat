@@ -137,7 +137,14 @@ impl Iterator for ChatClient {
             };
             match message {
                 Message::Text(data) => {
-                    let cmdpacket: GenericPacket = json::decode(&data).unwrap();
+                    let cmdpacket: GenericPacket = match json::decode(&data) {
+                        Ok(cmdpacket) => cmdpacket,
+                        Err(e) => {
+                            println!("{}", e);
+                            continue;
+                        }
+                    };
+
                     let cmd = cmdpacket.cmd;
                     if cmd == "chat" {
                         let decodedpacket: ChatPacket = json::decode(&data).unwrap();
@@ -183,16 +190,18 @@ impl Iterator for ChatClient {
 
 /// Various Hack.chat events
 pub enum ChatEvent {
-    /// Raised when there is a new message from the channel  
+    /// Raised when there is a new message from the channel
     /// The format is ChatEvent::Message(nick, text, trip_code)
     Message (String, String, String),
-    /// Rasied when someone joins the channel  
+    /// Rasied when someone joins the channel
+    ///
     /// The format is ChatEvent::JoinRoom(nick)
     JoinRoom (String),
-    /// Raised when someone leaves the channel  
+    /// Raised when someone leaves the channel
+    ///
     /// The format is ChatEvent::LeaveRoom(nick)
     LeaveRoom (String),
-    /// Raised when there is an event from the channel itself.  
+    /// Raised when there is an event from the channel itself.
     /// Some examples include:
     ///
     /// * The result of the stats requests

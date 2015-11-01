@@ -42,6 +42,7 @@ use websocket::ws::receiver::Receiver as ReceiverTrait;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+/// The main struct responsible for the connection and events.
 #[derive(Clone)]
 pub struct ChatClient {
     nick: String,
@@ -52,6 +53,11 @@ pub struct ChatClient {
 
 impl ChatClient {
     /// Creates a new connection to hack.chat.
+    ///
+    /// ```
+    /// let mut chat = ChatClient::new("WikiBot", "programming");
+    /// // Joins ?programming with the nick "WikiBot"
+    /// ```
     pub fn new(nick: &str, channel: &str) -> ChatClient {
         let url = Url::parse("wss://hack.chat/chat-ws").unwrap();
         let request = Client::connect(url).unwrap();
@@ -82,6 +88,13 @@ impl ChatClient {
     /// let mut chat = ChatClient::new("TestBot", "botDev");
     /// chat.send_message("Hello there people".to_string());
     /// ```
+    ///
+    /// ```
+    /// let mut chat = ChatClient::new("TestBot", "botDev");
+    ///
+    /// let problem_count = 99;
+    /// chat.send_message(format!("I got {} problems but Rust ain't one", problem_count));
+    /// ```
     pub fn send_message(&mut self, message: String) {
         let chat_packet = json::encode(&ChatPacketSend {
             cmd: "chat".to_string(),
@@ -99,6 +112,8 @@ impl ChatClient {
         self.sender.lock().unwrap().send_message(message).unwrap();
     }
 
+    /// Sends a stats request, which results in an Info event that has the number of connected
+    /// IPs and channels.
     pub fn send_stats_request(&mut self) {
         let stats_packet = json::encode(&GenericPacket {
             cmd: "stats".to_string()
@@ -107,7 +122,7 @@ impl ChatClient {
         self.sender.lock().unwrap().send_message(message).unwrap();
     }
 
-    /// Starts the ping thread, whichs sends regular pings to keep the connection open.
+    /// Starts the ping thread, which sends regular pings to keep the connection open.
     pub fn start_ping_thread(&mut self) {
         let mut chat_clone = self.clone();
         thread::spawn(move|| {
@@ -119,6 +134,24 @@ impl ChatClient {
     }
 
     /// Returns an iterator of hack.chat events such as messages.
+    ///
+    /// #Examples
+    /// ```
+    /// let mut chat = ChatClient::new("GreetingBot", "botDev");
+    /// chat.start_ping_thread(); //Start the ping thread so we keep connected
+    ///
+    /// for event in chat.iter() {
+    ///     match event {
+    ///         ChatEvent::JoinRoom(nick) => {
+    ///             chat.send_message(format!("Welcome to the chat {}!", nick));
+    ///         },
+    ///         ChatEvent::LeaveRoom(nick) => {
+    ///             chat.send_message(format!("Goodbye {}, see you later!", nick));
+    ///         },
+    ///         _ => {}
+    ///     }
+    /// }
+    /// ```
     pub fn iter(&mut self) -> ChatClient {
         return self.clone();
     }
@@ -191,6 +224,7 @@ impl Iterator for ChatClient {
 /// Various Hack.chat events
 pub enum ChatEvent {
     /// Raised when there is a new message from the channel
+    ///
     /// The format is ChatEvent::Message(nick, text, trip_code)
     Message (String, String, String),
     /// Rasied when someone joins the channel

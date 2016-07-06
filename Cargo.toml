@@ -10,5 +10,5 @@ documentation = "https://gkbrk.github.io/rust-hackchat/hackchat/index.html"
 
 
 [dependencies]
-websocket = "~0.12.2"
+websocket = "0.17"
 rustc-serialize = "0.3"

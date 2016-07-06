@@ -32,9 +32,11 @@ use std::thread;
 use rustc_serialize::json;
 
 use websocket::{Client, Message, WebSocketStream};
+use websocket::message::Type;
 use websocket::client::request::Url;
-use websocket::client::sender::Sender;
-use websocket::client::receiver::Receiver;
+
+use websocket::sender::Sender;
+use websocket::receiver::Receiver;
 
 use websocket::ws::sender::Sender as SenderTrait;
 use websocket::ws::receiver::Receiver as ReceiverTrait;
@@ -71,8 +73,8 @@ impl ChatClient {
             nick: nick.to_string(),
             channel: channel.to_string()
         }).unwrap();
-        let message = Message::Text(join_packet);
-        sender.send_message(message).unwrap();
+        let message = Message::text(join_packet);
+        sender.send_message(&message).unwrap();
 
         return ChatClient {
             nick: nick.to_string(),
@@ -100,16 +102,16 @@ impl ChatClient {
             cmd: "chat".to_string(),
             text: message
         }).unwrap();
-        let message = Message::Text(chat_packet);
-        self.sender.lock().unwrap().send_message(message).unwrap();
+        let message = Message::text(chat_packet);
+        self.sender.lock().unwrap().send_message(&message).unwrap();
     }
 
     fn send_ping(&mut self) {
         let ping_packet = json::encode(&GenericPacket {
             cmd: "ping".to_string()
         }).unwrap();
-        let message = Message::Text(ping_packet);
-        self.sender.lock().unwrap().send_message(message).unwrap();
+        let message = Message::text(ping_packet);
+        self.sender.lock().unwrap().send_message(&message).unwrap();
     }
 
     /// Sends a stats request, which results in an Info event that has the number of connected
@@ -118,8 +120,8 @@ impl ChatClient {
         let stats_packet = json::encode(&GenericPacket {
             cmd: "stats".to_string()
         }).unwrap();
-        let message = Message::Text(stats_packet);
-        self.sender.lock().unwrap().send_message(message).unwrap();
+        let message = Message::text(stats_packet);
+        self.sender.lock().unwrap().send_message(&message).unwrap();
     }
 
     /// Starts the ping thread, which sends regular pings to keep the connection open.
@@ -161,16 +163,18 @@ impl Iterator for ChatClient {
     type Item = ChatEvent;
     fn next(&mut self) -> Option<ChatEvent> {
         loop {
-            let message = match self.receiver.lock().unwrap().recv_message() {
+            let message: Message = match self.receiver.lock().unwrap().recv_message() {
                 Ok(message) => message,
                 Err(e) => {
                     println!("{}", e);
                     continue;
                 }
             };
-            match message {
-                Message::Text(data) => {
-                    let cmdpacket: GenericPacket = match json::decode(&data) {
+            
+            match message.opcode {
+                Type::Text => {
+                    let data = std::str::from_utf8(&*message.payload).unwrap();
+                    let cmdpacket: GenericPacket = match json::decode(data) {
                         Ok(cmdpacket) => cmdpacket,
                         Err(e) => {
                             println!("{}", e);
@@ -209,8 +213,8 @@ impl Iterator for ChatClient {
                         continue;
                     }
                 },
-                Message::Ping(data) => {
-                    self.sender.lock().unwrap().send_message(Message::Pong(data)).unwrap();
+                Type::Ping => {
+                    self.sender.lock().unwrap().send_message(&Message::pong(message.payload)).unwrap();
                 },
                 _ => {
                     return None;

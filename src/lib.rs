@@ -25,6 +25,7 @@
 //! ```
 
 extern crate websocket;
+#[macro_use] extern crate serde_json;
 extern crate rustc_serialize;
 
 use std::thread;
@@ -68,12 +69,12 @@ impl ChatClient {
         let client = response.begin();
         let (mut sender, receiver) = client.split();
 
-        let join_packet = json::encode(&JoinPacket {
-            cmd: "join".to_string(),
-            nick: nick.to_string(),
-            channel: channel.to_string()
-        }).unwrap();
-        let message = Message::text(join_packet);
+        let join_packet = json!({
+            "cmd": "join",
+            "nick": nick,
+            "channel": channel
+        });
+        let message = Message::text(join_packet.to_string());
         sender.send_message(&message).unwrap();
 
         return ChatClient {
@@ -98,29 +99,29 @@ impl ChatClient {
     /// chat.send_message(format!("I got {} problems but Rust ain't one", problem_count));
     /// ```
     pub fn send_message(&mut self, message: String) {
-        let chat_packet = json::encode(&ChatPacketSend {
-            cmd: "chat".to_string(),
-            text: message
-        }).unwrap();
-        let message = Message::text(chat_packet);
+        let chat_packet = json!({
+            "cmd": "chat",
+            "text": message
+        });
+        let message = Message::text(chat_packet.to_string());
         self.sender.lock().unwrap().send_message(&message).unwrap();
     }
 
     fn send_ping(&mut self) {
-        let ping_packet = json::encode(&GenericPacket {
-            cmd: "ping".to_string()
-        }).unwrap();
-        let message = Message::text(ping_packet);
+        let ping_packet = json!({
+            "cmd": "ping"
+        });
+        let message = Message::text(ping_packet.to_string());
         self.sender.lock().unwrap().send_message(&message).unwrap();
     }
 
     /// Sends a stats request, which results in an Info event that has the number of connected
     /// IPs and channels.
     pub fn send_stats_request(&mut self) {
-        let stats_packet = json::encode(&GenericPacket {
-            cmd: "stats".to_string()
-        }).unwrap();
-        let message = Message::text(stats_packet);
+        let stats_packet = json!({
+            "cmd": "stats"
+        });
+        let message = Message::text(stats_packet.to_string());
         self.sender.lock().unwrap().send_message(&message).unwrap();
     }
 
@@ -174,43 +175,50 @@ impl Iterator for ChatClient {
             match message.opcode {
                 Type::Text => {
                     let data = std::str::from_utf8(&*message.payload).unwrap();
-                    let cmdpacket: GenericPacket = match json::decode(data) {
-                        Ok(cmdpacket) => cmdpacket,
+                    let cmdpacket: serde_json::Value = match serde_json::from_slice(&*message.payload) {
+                        Ok(packet) => packet,
                         Err(e) => {
                             println!("{}", e);
                             continue;
                         }
                     };
 
-                    let cmd = cmdpacket.cmd;
-                    if cmd == "chat" {
-                        let decodedpacket: ChatPacket = json::decode(&data).unwrap();
-                        if decodedpacket.nick != self.nick {
-                            return Some(ChatEvent::Message (
-                                    decodedpacket.nick,
-                                    decodedpacket.text,
-                                    decodedpacket.trip.unwrap_or("".to_string())
-                            ));
-                        }else {
+                    match cmdpacket.get("cmd").unwrap_or(&serde_json::Value::Null).as_str() {
+                        Some("chat") => {
+                            let decodedpacket: ChatPacket = json::decode(&data).unwrap();
+                            if decodedpacket.nick != self.nick {
+                                return Some(ChatEvent::Message (
+                                        decodedpacket.nick,
+                                        decodedpacket.text,
+                                        decodedpacket.trip.unwrap_or("".to_string())
+                                        ));
+                            }else {
+                                continue;
+                            }
+                        },
+                        Some("info") => {
+                            let decodedpacket: InfoWarnPacket = json::decode(&data).unwrap();
+                            return Some(ChatEvent::Info (
+                                    decodedpacket.text
+                                    ));
+                        },
+                        Some("onlineAdd") => {
+                            let decodedpacket: OnlineChangePacket = json::decode(&data).unwrap();
+                            return Some(ChatEvent::JoinRoom (
+                                    decodedpacket.nick
+                                    ));
+
+                        },
+                        Some("onlineRemove") => {
+                            let decodedpacket: OnlineChangePacket = json::decode(&data).unwrap();
+                            return Some(ChatEvent::LeaveRoom (
+                                    decodedpacket.nick
+                                    ));
+                        },
+                        _ => {
+                            println!("Unsupported message type");
                             continue;
                         }
-                    }else if cmd == "info" {
-                        let decodedpacket: InfoWarnPacket = json::decode(&data).unwrap();
-                        return Some(ChatEvent::Info (
-                            decodedpacket.text
-                        ));
-                    }else if cmd == "onlineAdd" {
-                        let decodedpacket: OnlineChangePacket = json::decode(&data).unwrap();
-                        return Some(ChatEvent::JoinRoom (
-                            decodedpacket.nick
-                        ));
-                    }else if cmd == "onlineRemove" {
-                        let decodedpacket: OnlineChangePacket = json::decode(&data).unwrap();
-                        return Some(ChatEvent::LeaveRoom (
-                            decodedpacket.nick
-                        ));
-                    }else {
-                        continue;
                     }
                 },
                 Type::Ping => {
@@ -266,18 +274,5 @@ struct OnlineChangePacket {
 
 #[derive(RustcDecodable)]
 struct InfoWarnPacket {
-    text: String
-}
-
-#[derive(RustcEncodable)]
-struct JoinPacket {
-    cmd: String,
-    channel: String,
-    nick: String
-}
-
-#[derive(RustcEncodable)]
-struct ChatPacketSend {
-    cmd: String,
     text: String
 }

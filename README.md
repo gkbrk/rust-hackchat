@@ -1,10 +1,12 @@
 # Hack.chat Library For Rust
 
-[![Crates.io](https://img.shields.io/crates/v/hackchat.svg)](https://crates.io/crates/hackchat) | [Documentation](https://gkbrk.github.io/rust-hackchat/hackchat/index.html)
+[![Crates.io](https://img.shields.io/crates/v/hackchat.svg)](https://crates.io/crates/hackchat) [![Docs.rs](https://img.shields.io/badge/docs-hackchat-brightgreen.svg)](https://docs.rs/hackchat)
 
 A client library for Hack.chat.
 
 This library allows you to make custom clients and bots for Hack.chat using Rust.
+
+## Example
 
 Here's an example that connects to a channel and prints the chat logs to the console.
 
